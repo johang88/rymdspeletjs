@@ -1,3 +1,3 @@
-import { Renderer } from "rse/renderer";
+/// <reference path="rse/Renderer.ts" />
 
-let renderer = new Renderer("#glCanvas");
+let renderer = new rse.Renderer("#glCanvas");

@@ -1,0 +1,1 @@
+var gl:WebGLRenderingContext = null;
