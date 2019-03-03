@@ -1,7 +1,6 @@
-
 var gl:WebGLRenderingContext = null;
 
-class Renderer {
+export class Renderer {
     constructor(selector:string) {
         const canvas = <HTMLCanvasElement>document.querySelector(selector);
         gl = canvas.getContext("experimental-webgl", {});
@@ -77,5 +76,3 @@ class SpriteInfo {
 class SpriteBatch {
 
 }
-
-let renderer = new Renderer("#glCanvas");
