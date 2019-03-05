@@ -102,6 +102,51 @@ var rse;
 })(rse || (rse = {}));
 var rse;
 (function (rse) {
+    function compileShader(type, source, defines) {
+        var shader = gl.createShader(type);
+        var definesString = defines.map(function (s) { return '#define ' + s; }).join('\n');
+        source = definesString + '\n' + source;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
+            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+        }
+        return shader;
+    }
+    var Shader = /** @class */ (function () {
+        function Shader(vertexShaderSource, fragmentShaderSource, defines) {
+            var vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, defines);
+            var fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, defines);
+            this.handle = gl.createProgram();
+            gl.attachShader(this.handle, vertexShader);
+            gl.attachShader(this.handle, fragmentShader);
+            gl.linkProgram(this.handle);
+            gl.deleteShader(vertexShader);
+            gl.deleteShader(fragmentShader);
+            var success = gl.getProgramParameter(this.handle, gl.LINK_STATUS);
+            if (!success) {
+                throw "could not link shader " + gl.getProgramInfoLog(this.handle);
+            }
+        }
+        Shader.prototype.setUniformInt = function (index, value) {
+            gl.uniform1i(index, value);
+        };
+        Shader.prototype.setUniformFloat = function (index, value) {
+            gl.uniform1f(index, value);
+        };
+        Shader.prototype.setUniformVec4 = function (index, value) {
+            gl.uniform4f(index, value.x, value.y, value.z, value.w);
+        };
+        Shader.prototype.setUniformColor = function (index, value) {
+            gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
+        };
+        return Shader;
+    }());
+    rse.Shader = Shader;
+})(rse || (rse = {}));
+var rse;
+(function (rse) {
     var BlendMode;
     (function (BlendMode) {
         BlendMode[BlendMode["None"] = 0] = "None";
@@ -122,6 +167,31 @@ var rse;
         }
         return SpriteInfo;
     }());
+    var TextAlignment;
+    (function (TextAlignment) {
+        TextAlignment[TextAlignment["Left"] = 0] = "Left";
+        TextAlignment[TextAlignment["Right"] = 1] = "Right";
+        TextAlignment[TextAlignment["Center"] = 2] = "Center";
+    })(TextAlignment = rse.TextAlignment || (rse.TextAlignment = {}));
+    var SpriteBatch = /** @class */ (function () {
+        function SpriteBatch() {
+            this.vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        }
+        SpriteBatch.prototype.drawSprite = function (sprite) {
+        };
+        SpriteBatch.prototype.drawColoredRect = function (rect, color) {
+        };
+        SpriteBatch.prototype.drawTexture = function (rect, uv, color, texture) {
+        };
+        // todo: print methods here ...
+        // Submit pending draw calls
+        SpriteBatch.prototype.submit = function (width, height, shaderFlags) {
+            if (shaderFlags === void 0) { shaderFlags = -1; }
+        };
+        return SpriteBatch;
+    }());
+    rse.SpriteBatch = SpriteBatch;
 })(rse || (rse = {}));
 var rse;
 (function (rse) {
@@ -155,5 +225,6 @@ var rse;
         };
         return Texture;
     }());
+    rse.Texture = Texture;
 })(rse || (rse = {}));
 //# sourceMappingURL=rymdspelet.js.map
