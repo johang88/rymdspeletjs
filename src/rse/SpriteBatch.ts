@@ -13,6 +13,25 @@ namespace rse {
         }
     }
 
+    class Vertex {
+        x:number;
+        y:number;
+        u:number;
+        v:number;
+        r:number;
+        g:number;
+        b:number;
+        a:number;
+    }
+
+    class DrawCall {
+        texture:WebGLTexture;
+        blendMode:BlendMode;
+        flags:number;
+        first:number;
+        count:number;
+    }
+
     export enum TextAlignment {
         Left,
         Right,
@@ -41,7 +60,11 @@ namespace rse {
         private vertexBuffer:WebGLBuffer;
         private vao:WebGLVertexArrayObject;
 
-        constructor() {
+        private shader:Shader;
+
+        constructor(shader:Shader) {
+            this.shader = shader;
+
             // Allocate vertex buffer
             this.vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -158,9 +181,90 @@ namespace rse {
             if (this.sprites.length == 0)
                 return;
 
-            // TODO: Sort sprites
+            let currentTextureHandle = this.sprites[0].texture;
+            let currentBlendMode = this.sprites[0].blendMode;
+            let currentFlags = this.sprites[0].flags;
 
-            
+            let vertices:Vertex[] = [];
+            let drawCalls:DrawCall[] = [];
+            let first = 0;
+
+            // Prepare vertex data and draw calls
+            for (let i = 0; i < this.sprites.length; i++) {
+                let points = this.sprites[i].points;
+                let color = this.sprites[i].color;
+
+                // Triangle 1
+                vertices.push({ x: points[0].x, y: points[0].y, u: points[0].y, v: points[0].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[1].x, y: points[1].y, u: points[1].y, v: points[1].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[2].x, y: points[2].y, u: points[2].y, v: points[2].v, r: color.r, g: color.g, b: color.b, a: color.a });
+
+                // Triangle 2
+                vertices.push({ x: points[3].x, y: points[3].y, u: points[3].y, v: points[3].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[4].x, y: points[4].y, u: points[4].y, v: points[4].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[5].x, y: points[5].y, u: points[5].y, v: points[5].v, r: color.r, g: color.g, b: color.b, a: color.a });
+
+                if (i + 1 == this.sprites.length || currentTextureHandle != this.sprites[i + 1].texture || currentBlendMode != this.sprites[i + 1].blendMode || currentFlags != this.sprites[i + 1].flags) {
+                    drawCalls.push({ texture: currentTextureHandle, blendMode: currentBlendMode, flags: currentFlags, first: first, count: vertices.length - first });
+
+                    if (i + 1 < this.sprites.length) {
+                        currentTextureHandle = this.sprites[i + 1].texture;
+                        currentBlendMode = this.sprites[i + 1].blendMode;
+                        currentFlags = this.sprites[i + 1].flags;
+                    }
+
+                    first = vertices.length;
+                }
+            }
+
+            // Upload data
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+
+            let vertexData = new Float32Array(8 * vertices.length);
+            for (let i = 0; i < vertices.length; i++) {
+                vertexData[i * 8 + 0] = vertices[i].x;
+                vertexData[i * 8 + 1] = vertices[i].y;
+                vertexData[i * 8 + 2] = vertices[i].u;
+                vertexData[i * 8 + 3] = vertices[i].v;
+                vertexData[i * 8 + 4] = vertices[i].r;
+                vertexData[i * 8 + 5] = vertices[i].g;
+                vertexData[i * 8 + 6] = vertices[i].b;
+                vertexData[i * 8 + 7] = vertices[i].a;
+            }
+
+            gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER, 0);
+
+            // Draw everything
+            gl.bindVertexArray(this.vao);
+            for (let i = 0; i < drawCalls.length; i++) {
+                if (drawCalls[i].texture) {
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, drawCalls[i].texture);
+                } else {
+                    gl.bindTexture(gl.TEXTURE_2D, 0);
+                }
+
+                switch (drawCalls[i].blendMode) {
+                    case BlendMode.None:
+                        gl.disable(gl.BLEND);
+                        gl.blendFunc(gl.ONE, gl.ZERO);
+                    break;
+                    case BlendMode.Add:
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.ONE, gl.ONE);
+                    break;
+                    case BlendMode.Alpha:
+                        gl.enable(gl.BLEND);
+                        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    break;
+                }
+
+                // TODO: Use shader bundle
+                this.shader.use();
+
+                gl.drawArrays(gl.TRIANGLES, drawCalls[i].first, drawCalls[i].count);
+            }
 
             this.sprites = [];
         }

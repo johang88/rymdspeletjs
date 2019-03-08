@@ -42,6 +42,10 @@ namespace rse {
             }
         }
 
+        use() {
+            gl.useProgram(this.handle);
+        }
+
         setUniformInt(index:number, value:number) {
             gl.uniform1i(index, value);
         }
