@@ -1,6 +1,6 @@
 namespace rse {
     class SpriteInfo {
-        points:{x:number,y:number,u:number,v:number}[];
+        points:{x:number,y:number,u:number,v:number}[] = [];
         color:Color;
         blendMode:BlendMode;
         texture:WebGLTexture;
@@ -55,7 +55,7 @@ namespace rse {
     }
 
     export class SpriteBatch {
-        private sprites:SpriteInfo[];
+        private sprites:SpriteInfo[] = [];
 
         private vertexBuffer:WebGLBuffer;
         private vao:WebGLVertexArrayObject;
@@ -233,7 +233,6 @@ namespace rse {
             }
 
             gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
-            gl.bindBuffer(gl.ARRAY_BUFFER, 0);
 
             // Draw everything
             gl.bindVertexArray(this.vao);
@@ -262,7 +261,6 @@ namespace rse {
 
                 // TODO: Use shader bundle
                 this.shader.use();
-
                 gl.drawArrays(gl.TRIANGLES, drawCalls[i].first, drawCalls[i].count);
             }
 
