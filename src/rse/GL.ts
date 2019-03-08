@@ -1,1 +1,1 @@
-var gl:WebGLRenderingContext = null;
+var gl:WebGL2RenderingContext = null;

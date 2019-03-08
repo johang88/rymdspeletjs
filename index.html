@@ -3,6 +3,58 @@
 </head>
 <body>
     <canvas id="glCanvas" width="1920" height="1080"></canvas>
+
+    <script type="glsl" id="sprite_vertex_shader">
+precision mediump float;
+
+layout(location = 0) in vec2 aPosition;
+layout(location = 1) in vec2 aTexCoord;
+layout(location = 2) in vec4 aColor;
+
+out vec2 texCoord;
+out vec4 color;
+
+uniform vec4 uViewSize;
+
+void main() {
+    texCoord = aTexCoord;
+    color = aColor;
+
+    gl_Position = vec4(2.0 * aPosition.x / uViewSize.x - 1.0, 1.0 - 2.0 * aPosition.y / uViewSize.y, 0, 1);
+}
+    </script>
+
+    <script type="glsl" id="sprite_fragment_shader">
+precision mediump float;
+
+in vec2 texCoord;
+in vec4 color;
+
+uniform sampler2D uSpriteSampler;
+
+out vec4 oColor;
+
+void main() {
+#ifdef VERTEX_COLOR
+	vec4 color = color;
+#else
+	vec4 color = vec4(1);
+#endif
+
+#ifdef TEXTURED
+	#ifdef FONT
+	vec4 sprite = texture(uSpriteSampler, i.texCoord).xxxx;
+	#else
+	vec4 sprite = texture(uSpriteSampler, i.texCoord);
+    #endif
+    
+    color *= sprite;
+#endif
+
+    oColor = color;
+}
+    </script>
+
     <script src="build/rymdspelet.js" type="text/javascript" ></script>
 </body>
 </html>

@@ -5,6 +5,8 @@ namespace rse {
 
         let definesString = defines.map(s => '#define ' + s).join('\n');
         source = definesString + '\n' + source;
+
+        source = "#version 300 es\n" + source;
         
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
@@ -54,6 +56,16 @@ namespace rse {
 
         setUniformColor(index:number, value:Color) {
             gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
+        }
+
+        static fromScript(vertexShaderId:string, fragmentShaderId:string, defines:string[] = []):Shader {
+            let vertexShaderElement = <HTMLScriptElement>document.getElementById(vertexShaderId);
+            let fragmentShaderElement = <HTMLScriptElement>document.getElementById(fragmentShaderId);
+
+            let vertexShader = vertexShaderElement.text;
+            let fragmentShader = fragmentShaderElement.text;
+
+            return new Shader(vertexShader, fragmentShader, defines);
         }
     }
 }

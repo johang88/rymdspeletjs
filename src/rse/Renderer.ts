@@ -2,7 +2,7 @@ namespace rse {
     export class Renderer {
         constructor(selector:string) {
             const canvas = <HTMLCanvasElement>document.querySelector(selector);
-            gl = canvas.getContext("experimental-webgl", {});
+            gl = canvas.getContext("webgl2", {});
 
             if (gl == null) {
                 alert("Unable to initialize WebGL context!");

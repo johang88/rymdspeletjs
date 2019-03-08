@@ -26,6 +26,18 @@ namespace rse {
             gl.bindTexture(gl.TEXTURE_2D, this.handle);
         }
 
+        getWidth():number {
+            return this.width;
+        }
+
+        getHeight():number {
+            return this.height;
+        }
+
+        getHandle(): WebGLTexture {
+            return this.handle;
+        }
+
         static fromUrl(url:string, callback:(texture:Texture)=>void) {
             let img = new Image();
             img.addEventListener('load', () => {

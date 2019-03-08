@@ -3,7 +3,7 @@ var rse;
     var Renderer = /** @class */ (function () {
         function Renderer(selector) {
             var canvas = document.querySelector(selector);
-            gl = canvas.getContext("experimental-webgl", {});
+            gl = canvas.getContext("webgl2", {});
             if (gl == null) {
                 alert("Unable to initialize WebGL context!");
                 return;
@@ -15,8 +15,64 @@ var rse;
     }());
     rse.Renderer = Renderer;
 })(rse || (rse = {}));
+var rse;
+(function (rse) {
+    function compileShader(type, source, defines) {
+        var shader = gl.createShader(type);
+        var definesString = defines.map(function (s) { return '#define ' + s; }).join('\n');
+        source = definesString + '\n' + source;
+        source = "#version 300 es\n" + source;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
+            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+        }
+        return shader;
+    }
+    var Shader = /** @class */ (function () {
+        function Shader(vertexShaderSource, fragmentShaderSource, defines) {
+            var vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, defines);
+            var fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, defines);
+            this.handle = gl.createProgram();
+            gl.attachShader(this.handle, vertexShader);
+            gl.attachShader(this.handle, fragmentShader);
+            gl.linkProgram(this.handle);
+            gl.deleteShader(vertexShader);
+            gl.deleteShader(fragmentShader);
+            var success = gl.getProgramParameter(this.handle, gl.LINK_STATUS);
+            if (!success) {
+                throw "could not link shader " + gl.getProgramInfoLog(this.handle);
+            }
+        }
+        Shader.prototype.setUniformInt = function (index, value) {
+            gl.uniform1i(index, value);
+        };
+        Shader.prototype.setUniformFloat = function (index, value) {
+            gl.uniform1f(index, value);
+        };
+        Shader.prototype.setUniformVec4 = function (index, value) {
+            gl.uniform4f(index, value.x, value.y, value.z, value.w);
+        };
+        Shader.prototype.setUniformColor = function (index, value) {
+            gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
+        };
+        Shader.fromScript = function (vertexShaderId, fragmentShaderId, defines) {
+            if (defines === void 0) { defines = []; }
+            var vertexShaderElement = document.getElementById(vertexShaderId);
+            var fragmentShaderElement = document.getElementById(fragmentShaderId);
+            var vertexShader = vertexShaderElement.text;
+            var fragmentShader = fragmentShaderElement.text;
+            return new Shader(vertexShader, fragmentShader, defines);
+        };
+        return Shader;
+    }());
+    rse.Shader = Shader;
+})(rse || (rse = {}));
 /// <reference path="rse/Renderer.ts" />
+/// <reference path="rse/Shader.ts" />
 var renderer = new rse.Renderer("#glCanvas");
+var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader");
 var gl = null;
 var rse;
 (function (rse) {
@@ -102,51 +158,6 @@ var rse;
 })(rse || (rse = {}));
 var rse;
 (function (rse) {
-    function compileShader(type, source, defines) {
-        var shader = gl.createShader(type);
-        var definesString = defines.map(function (s) { return '#define ' + s; }).join('\n');
-        source = definesString + '\n' + source;
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-        if (!success) {
-            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
-        }
-        return shader;
-    }
-    var Shader = /** @class */ (function () {
-        function Shader(vertexShaderSource, fragmentShaderSource, defines) {
-            var vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, defines);
-            var fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, defines);
-            this.handle = gl.createProgram();
-            gl.attachShader(this.handle, vertexShader);
-            gl.attachShader(this.handle, fragmentShader);
-            gl.linkProgram(this.handle);
-            gl.deleteShader(vertexShader);
-            gl.deleteShader(fragmentShader);
-            var success = gl.getProgramParameter(this.handle, gl.LINK_STATUS);
-            if (!success) {
-                throw "could not link shader " + gl.getProgramInfoLog(this.handle);
-            }
-        }
-        Shader.prototype.setUniformInt = function (index, value) {
-            gl.uniform1i(index, value);
-        };
-        Shader.prototype.setUniformFloat = function (index, value) {
-            gl.uniform1f(index, value);
-        };
-        Shader.prototype.setUniformVec4 = function (index, value) {
-            gl.uniform4f(index, value.x, value.y, value.z, value.w);
-        };
-        Shader.prototype.setUniformColor = function (index, value) {
-            gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
-        };
-        return Shader;
-    }());
-    rse.Shader = Shader;
-})(rse || (rse = {}));
-var rse;
-(function (rse) {
     var BlendMode;
     (function (BlendMode) {
         BlendMode[BlendMode["None"] = 0] = "None";
@@ -173,10 +184,37 @@ var rse;
         TextAlignment[TextAlignment["Right"] = 1] = "Right";
         TextAlignment[TextAlignment["Center"] = 2] = "Center";
     })(TextAlignment = rse.TextAlignment || (rse.TextAlignment = {}));
+    function rotatePoint(p, r) {
+        var tx = p.x;
+        var ty = p.y;
+        var sr = Math.sin(r);
+        var cr = Math.cos(r);
+        p.x = tx * cr - ty * sr;
+        p.y = tx * sr + ty * cr;
+    }
+    function translatePoint(p, t) {
+        p.x += t.x;
+        p.y += t.y;
+    }
     var SpriteBatch = /** @class */ (function () {
         function SpriteBatch() {
+            // Allocate vertex buffer
             this.vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            // Setup VAO
+            this.vao = gl.createVertexArray();
+            gl.bindVertexArray(this.vao);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            var size = 4 * 8;
+            // Position
+            gl.enableVertexAttribArray(0);
+            gl.vertexAttribPointer(0, 2, gl.FLOAT, false, size, 0);
+            // UV
+            gl.enableVertexAttribArray(1);
+            gl.vertexAttribPointer(1, 2, gl.FLOAT, false, size, 4 * 2);
+            // Color
+            gl.enableVertexAttribArray(2);
+            gl.vertexAttribPointer(2, 4, gl.FLOAT, false, size, 4 * 4);
         }
         SpriteBatch.prototype.drawSprite = function (sprite) {
         };
