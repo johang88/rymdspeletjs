@@ -268,13 +268,13 @@ var rse;
                 var points = this.sprites[i].points;
                 var color = this.sprites[i].color;
                 // Triangle 1
-                vertices.push({ x: points[0].x, y: points[0].y, u: points[0].y, v: points[0].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[1].x, y: points[1].y, u: points[1].y, v: points[1].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[2].x, y: points[2].y, u: points[2].y, v: points[2].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[0].x, y: points[0].y, u: points[0].u, v: points[0].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[1].x, y: points[1].y, u: points[1].u, v: points[1].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[2].x, y: points[2].y, u: points[2].u, v: points[2].v, r: color.r, g: color.g, b: color.b, a: color.a });
                 // Triangle 2
-                vertices.push({ x: points[3].x, y: points[3].y, u: points[3].y, v: points[3].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[4].x, y: points[4].y, u: points[4].y, v: points[4].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[5].x, y: points[5].y, u: points[5].y, v: points[5].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[3].x, y: points[3].y, u: points[3].u, v: points[3].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[4].x, y: points[4].y, u: points[4].u, v: points[4].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[5].x, y: points[5].y, u: points[5].u, v: points[5].v, r: color.r, g: color.g, b: color.b, a: color.a });
                 if (i + 1 == this.sprites.length || currentTextureHandle != this.sprites[i + 1].texture || currentBlendMode != this.sprites[i + 1].blendMode || currentFlags != this.sprites[i + 1].flags) {
                     drawCalls.push({ texture: currentTextureHandle, blendMode: currentBlendMode, flags: currentFlags, first: first, count: vertices.length - first });
                     if (i + 1 < this.sprites.length) {
@@ -438,13 +438,15 @@ rse.Texture.fromUrl('data/textures/background1.png', function (texture) {
 var spriteBatch = new rse.SpriteBatch(shader);
 function tick() {
     if (state.texture != null) {
+        gl.viewport(0, 0, 1920, 1080);
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.viewport(0, 0, 1920, 1080);
-        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1001080), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
+        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1080), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
         spriteBatch.submit(1920, 1080, null);
     }
-    window.requestAnimationFrame(tick);
+    else {
+        window.requestAnimationFrame(tick);
+    }
 }
 window.requestAnimationFrame(tick);
 var rse;

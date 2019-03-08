@@ -197,14 +197,14 @@ namespace rse {
                 let color = this.sprites[i].color;
 
                 // Triangle 1
-                vertices.push({ x: points[0].x, y: points[0].y, u: points[0].y, v: points[0].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[1].x, y: points[1].y, u: points[1].y, v: points[1].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[2].x, y: points[2].y, u: points[2].y, v: points[2].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[0].x, y: points[0].y, u: points[0].u, v: points[0].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[1].x, y: points[1].y, u: points[1].u, v: points[1].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[2].x, y: points[2].y, u: points[2].u, v: points[2].v, r: color.r, g: color.g, b: color.b, a: color.a });
 
                 // Triangle 2
-                vertices.push({ x: points[3].x, y: points[3].y, u: points[3].y, v: points[3].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[4].x, y: points[4].y, u: points[4].y, v: points[4].v, r: color.r, g: color.g, b: color.b, a: color.a });
-                vertices.push({ x: points[5].x, y: points[5].y, u: points[5].y, v: points[5].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[3].x, y: points[3].y, u: points[3].u, v: points[3].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[4].x, y: points[4].y, u: points[4].u, v: points[4].v, r: color.r, g: color.g, b: color.b, a: color.a });
+                vertices.push({ x: points[5].x, y: points[5].y, u: points[5].u, v: points[5].v, r: color.r, g: color.g, b: color.b, a: color.a });
 
                 if (i + 1 == this.sprites.length || currentTextureHandle != this.sprites[i + 1].texture || currentBlendMode != this.sprites[i + 1].blendMode || currentFlags != this.sprites[i + 1].flags) {
                     drawCalls.push({ texture: currentTextureHandle, blendMode: currentBlendMode, flags: currentFlags, first: first, count: vertices.length - first });
