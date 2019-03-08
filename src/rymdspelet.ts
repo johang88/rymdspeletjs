@@ -6,7 +6,7 @@
 
 let renderer = new rse.Renderer("#glCanvas");
 
-let shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader");
+let shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader", [ "TEXTURED" ]);
 
 class GameState {
     texture:rse.Texture = null;
@@ -27,7 +27,7 @@ function tick() {
 
         gl.viewport(0, 0, 1920, 1080);
 
-        spriteBatch.drawTexture(new rse.Rect(50, 50, 100, 100), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
+        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1001080), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
         spriteBatch.submit(1920, 1080, null);
     }
     window.requestAnimationFrame(tick);

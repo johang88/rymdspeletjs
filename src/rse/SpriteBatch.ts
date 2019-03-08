@@ -263,7 +263,8 @@ namespace rse {
 
                 // TODO: Use shader bundle
                 this.shader.use();
-                this.shader.setUniformVec4(0, new Vec4(width, height, 0, 0));
+                let location = this.shader.getUniformLocation("uViewSize");
+                this.shader.setUniformVec4(location, new Vec4(width, height, 0, 0));
 
                 gl.drawArrays(gl.TRIANGLES, drawCalls[i].first, drawCalls[i].count);
             }

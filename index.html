@@ -36,22 +36,22 @@ out vec4 oColor;
 
 void main() {
 #ifdef VERTEX_COLOR
-	vec4 color = color;
+	vec4 c = color;
 #else
-	vec4 color = vec4(1);
+	vec4 c = vec4(1);
 #endif
 
 #ifdef TEXTURED
 	#ifdef FONT
-	vec4 sprite = texture(uSpriteSampler, i.texCoord).xxxx;
+	vec4 sprite = texture(uSpriteSampler, texCoord).xxxx;
 	#else
-	vec4 sprite = texture(uSpriteSampler, i.texCoord);
+	vec4 sprite = texture(uSpriteSampler, texCoord);
     #endif
     
-    color *= sprite;
+    c = sprite;
 #endif
 
-    oColor = color;
+    oColor = c;
 }
     </script>
 

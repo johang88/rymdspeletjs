@@ -61,6 +61,9 @@ var rse;
         Shader.prototype.setUniformColor = function (index, value) {
             gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
         };
+        Shader.prototype.getUniformLocation = function (name) {
+            return gl.getUniformLocation(this.handle, name);
+        };
         Shader.fromScript = function (vertexShaderId, fragmentShaderId, defines) {
             if (defines === void 0) { defines = []; }
             var vertexShaderElement = document.getElementById(vertexShaderId);
@@ -177,6 +180,7 @@ var rse;
             // Color
             gl.enableVertexAttribArray(2);
             gl.vertexAttribPointer(2, 4, gl.FLOAT, false, size, 4 * 4);
+            gl.bindVertexArray(null);
         }
         SpriteBatch.prototype.drawSprite = function (sprite) {
             var rect = new rse.Rect(sprite.rect.x, sprite.rect.y, sprite.rect.w, sprite.rect.h);
@@ -321,9 +325,11 @@ var rse;
                 }
                 // TODO: Use shader bundle
                 this.shader.use();
-                this.shader.setUniformVec4(0, new rse.Vec4(width, height, 0, 0));
+                var location_1 = this.shader.getUniformLocation("uViewSize");
+                this.shader.setUniformVec4(location_1, new rse.Vec4(width, height, 0, 0));
                 gl.drawArrays(gl.TRIANGLES, drawCalls[i].first, drawCalls[i].count);
             }
+            gl.bindVertexArray(null);
             this.sprites = [];
         };
         return SpriteBatch;
@@ -418,7 +424,7 @@ var rse;
 /// <reference path="rse/SpriteBatch.ts" />
 /// <reference path="rse/Math.ts" />
 var renderer = new rse.Renderer("#glCanvas");
-var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader");
+var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader", ["TEXTURED"]);
 var GameState = /** @class */ (function () {
     function GameState() {
         this.texture = null;
@@ -435,7 +441,7 @@ function tick() {
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.viewport(0, 0, 1920, 1080);
-        spriteBatch.drawTexture(new rse.Rect(50, 50, 100, 100), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
+        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1001080), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
         spriteBatch.submit(1920, 1080, null);
     }
     window.requestAnimationFrame(tick);
