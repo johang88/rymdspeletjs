@@ -89,6 +89,8 @@ namespace rse {
             // Color
             gl.enableVertexAttribArray(2);
             gl.vertexAttribPointer(2, 4, gl.FLOAT, false, size, 4 * 4);
+
+            gl.bindVertexArray(null);
         }
 
         drawSprite(sprite:Sprite) {
@@ -265,6 +267,7 @@ namespace rse {
 
                 gl.drawArrays(gl.TRIANGLES, drawCalls[i].first, drawCalls[i].count);
             }
+            gl.bindVertexArray(null);
 
             this.sprites = [];
         }
