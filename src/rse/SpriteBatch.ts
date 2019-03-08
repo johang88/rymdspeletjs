@@ -242,7 +242,7 @@ namespace rse {
                     gl.activeTexture(gl.TEXTURE0);
                     gl.bindTexture(gl.TEXTURE_2D, drawCalls[i].texture);
                 } else {
-                    gl.bindTexture(gl.TEXTURE_2D, 0);
+                    gl.bindTexture(gl.TEXTURE_2D, null);
                 }
 
                 switch (drawCalls[i].blendMode) {

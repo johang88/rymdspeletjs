@@ -1,3 +1,4 @@
+var gl = null;
 var rse;
 (function (rse) {
     var Renderer = /** @class */ (function () {
@@ -72,11 +73,58 @@ var rse;
     }());
     rse.Shader = Shader;
 })(rse || (rse = {}));
+var rse;
+(function (rse) {
+    var Texture = /** @class */ (function () {
+        function Texture(width, height) {
+            this.width = width;
+            this.height = height;
+            // Create texture
+            this.handle = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+            // Setup texture paramters
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+        Texture.prototype.bind = function () {
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+        };
+        Texture.prototype.getWidth = function () {
+            return this.width;
+        };
+        Texture.prototype.getHeight = function () {
+            return this.height;
+        };
+        Texture.prototype.getHandle = function () {
+            return this.handle;
+        };
+        Texture.fromUrl = function (url, callback) {
+            var img = new Image();
+            img.onload = function () {
+                var texture = new Texture(img.width, img.height);
+                // Upload image data
+                texture.bind();
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+                callback(texture);
+            };
+            img.src = url;
+        };
+        return Texture;
+    }());
+    rse.Texture = Texture;
+})(rse || (rse = {}));
 /// <reference path="rse/Renderer.ts" />
 /// <reference path="rse/Shader.ts" />
+/// <reference path="rse/Texture.ts" />
 var renderer = new rse.Renderer("#glCanvas");
 var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader");
-var gl = null;
+rse.Texture.fromUrl('data/textures/background1.png', function (texture) {
+    console.log(texture);
+});
 var rse;
 (function (rse) {
     var Vec2 = /** @class */ (function () {
@@ -359,7 +407,7 @@ var rse;
                     gl.bindTexture(gl.TEXTURE_2D, drawCalls[i].texture);
                 }
                 else {
-                    gl.bindTexture(gl.TEXTURE_2D, 0);
+                    gl.bindTexture(gl.TEXTURE_2D, null);
                 }
                 switch (drawCalls[i].blendMode) {
                     case rse.BlendMode.None:
@@ -384,48 +432,5 @@ var rse;
         return SpriteBatch;
     }());
     rse.SpriteBatch = SpriteBatch;
-})(rse || (rse = {}));
-var rse;
-(function (rse) {
-    var Texture = /** @class */ (function () {
-        function Texture(width, height) {
-            this.width = width;
-            this.height = height;
-            // Create texture
-            this.handle = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
-            // Setup texture paramters
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.bindTexture(gl.TEXTURE_2D, 0);
-        }
-        Texture.prototype.bind = function () {
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
-        };
-        Texture.prototype.getWidth = function () {
-            return this.width;
-        };
-        Texture.prototype.getHeight = function () {
-            return this.height;
-        };
-        Texture.prototype.getHandle = function () {
-            return this.handle;
-        };
-        Texture.fromUrl = function (url, callback) {
-            var img = new Image();
-            img.addEventListener('load', function () {
-                var texture = new Texture(img.width, img.height);
-                // Upload image data
-                texture.bind();
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-                gl.bindTexture(gl.TEXTURE_2D, 0);
-                callback(texture);
-            });
-        };
-        return Texture;
-    }());
-    rse.Texture = Texture;
 })(rse || (rse = {}));
 //# sourceMappingURL=rymdspelet.js.map

@@ -19,7 +19,7 @@ namespace rse {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-            gl.bindTexture(gl.TEXTURE_2D, 0);
+            gl.bindTexture(gl.TEXTURE_2D, null);
         }
 
         bind() {
@@ -40,16 +40,17 @@ namespace rse {
 
         static fromUrl(url:string, callback:(texture:Texture)=>void) {
             let img = new Image();
-            img.addEventListener('load', () => {
+            img.onload = () => {
                 let texture = new Texture(img.width, img.height);
 
                 // Upload image data
                 texture.bind();
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-                gl.bindTexture(gl.TEXTURE_2D, 0);
+                gl.bindTexture(gl.TEXTURE_2D, null);
 
                 callback(texture);
-            });
+            };
+            img.src = url;
         }
     }
 }
