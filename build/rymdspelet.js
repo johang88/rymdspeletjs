@@ -441,7 +441,7 @@ function tick() {
         gl.viewport(0, 0, 1920, 1080);
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1080), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.texture);
+        spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1080), new rse.Rect(0, 0, 1920 / 2048, 1080 / 2048), rse.Color.White, state.texture);
         spriteBatch.submit(1920, 1080, null);
     }
     else {
