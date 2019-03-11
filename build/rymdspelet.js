@@ -1,124 +1,33 @@
-var gl = null;
-var rse;
-(function (rse) {
-    var Renderer = /** @class */ (function () {
-        function Renderer(selector) {
-            var canvas = document.querySelector(selector);
-            gl = canvas.getContext("webgl2", {});
-            if (gl == null) {
-                alert("Unable to initialize WebGL context!");
-                return;
-            }
-            gl.clearColor(0, 0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-        }
-        return Renderer;
-    }());
-    rse.Renderer = Renderer;
-})(rse || (rse = {}));
-var rse;
-(function (rse) {
-    function compileShader(type, source, defines) {
-        var shader = gl.createShader(type);
-        var definesString = defines.map(function (s) { return '#define ' + s; }).join('\n');
-        source = definesString + '\n' + source;
-        source = "#version 300 es\n" + source;
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-        if (!success) {
-            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
-        }
-        return shader;
+var EntityType;
+(function (EntityType) {
+    EntityType[EntityType["Ship"] = 0] = "Ship";
+    EntityType[EntityType["Asteroid"] = 1] = "Asteroid";
+    EntityType[EntityType["Bullet"] = 2] = "Bullet";
+    EntityType[EntityType["Explosion"] = 3] = "Explosion";
+})(EntityType || (EntityType = {}));
+var Entity = /** @class */ (function () {
+    function Entity() {
     }
-    var Shader = /** @class */ (function () {
-        function Shader(vertexShaderSource, fragmentShaderSource, defines) {
-            var vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, defines);
-            var fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, defines);
-            this.handle = gl.createProgram();
-            gl.attachShader(this.handle, vertexShader);
-            gl.attachShader(this.handle, fragmentShader);
-            gl.linkProgram(this.handle);
-            gl.deleteShader(vertexShader);
-            gl.deleteShader(fragmentShader);
-            var success = gl.getProgramParameter(this.handle, gl.LINK_STATUS);
-            if (!success) {
-                throw "could not link shader " + gl.getProgramInfoLog(this.handle);
-            }
-        }
-        Shader.prototype.use = function () {
-            gl.useProgram(this.handle);
-        };
-        Shader.prototype.setUniformInt = function (index, value) {
-            gl.uniform1i(index, value);
-        };
-        Shader.prototype.setUniformFloat = function (index, value) {
-            gl.uniform1f(index, value);
-        };
-        Shader.prototype.setUniformVec4 = function (index, value) {
-            gl.uniform4f(index, value.x, value.y, value.z, value.w);
-        };
-        Shader.prototype.setUniformColor = function (index, value) {
-            gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
-        };
-        Shader.prototype.getUniformLocation = function (name) {
-            return gl.getUniformLocation(this.handle, name);
-        };
-        Shader.fromScript = function (vertexShaderId, fragmentShaderId, defines) {
-            if (defines === void 0) { defines = []; }
-            var vertexShaderElement = document.getElementById(vertexShaderId);
-            var fragmentShaderElement = document.getElementById(fragmentShaderId);
-            var vertexShader = vertexShaderElement.text;
-            var fragmentShader = fragmentShaderElement.text;
-            return new Shader(vertexShader, fragmentShader, defines);
-        };
-        return Shader;
-    }());
-    rse.Shader = Shader;
-})(rse || (rse = {}));
+    return Entity;
+}());
 var rse;
 (function (rse) {
-    var Texture = /** @class */ (function () {
-        function Texture(width, height) {
-            this.width = width;
-            this.height = height;
-            // Create texture
-            this.handle = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
-            // Setup texture paramters
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.bindTexture(gl.TEXTURE_2D, null);
+    var ResourceManager = /** @class */ (function () {
+        function ResourceManager() {
+            this.textures = {};
+            this.sprites = {};
         }
-        Texture.prototype.bind = function () {
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+        ResourceManager.prototype.loadPackage = function (path, callback) {
         };
-        Texture.prototype.getWidth = function () {
-            return this.width;
+        ResourceManager.prototype.getTexture = function (name) {
+            return this.textures[name];
         };
-        Texture.prototype.getHeight = function () {
-            return this.height;
+        ResourceManager.prototype.getSprite = function (name) {
+            return this.sprites[name];
         };
-        Texture.prototype.getHandle = function () {
-            return this.handle;
-        };
-        Texture.fromUrl = function (url, callback) {
-            var img = new Image();
-            img.onload = function () {
-                var texture = new Texture(img.width, img.height);
-                // Upload image data
-                texture.bind();
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-                gl.bindTexture(gl.TEXTURE_2D, null);
-                callback(texture);
-            };
-            img.src = url;
-        };
-        return Texture;
+        return ResourceManager;
     }());
-    rse.Texture = Texture;
+    rse.ResourceManager = ResourceManager;
 })(rse || (rse = {}));
 var rse;
 (function (rse) {
@@ -417,6 +326,189 @@ var rse;
         return Math.sqrt(dx * dx + dy * dy) <= r1 + r2;
     }
     rse.circleIntersectCirlce = circleIntersectCirlce;
+})(rse || (rse = {}));
+/// <reference path="rse/ResourceManager.ts" />
+/// <reference path="rse/SpriteBatch.ts" />
+/// <reference path="rse/Math.ts" />
+var EventType;
+(function (EventType) {
+    EventType[EventType["Test"] = 1] = "Test";
+    EventType[EventType["Collision"] = 2] = "Collision";
+    EventType[EventType["Accelerate"] = 4] = "Accelerate";
+    EventType[EventType["Brake"] = 8] = "Brake";
+    EventType[EventType["RotateLeft"] = 16] = "RotateLeft";
+    EventType[EventType["RotateRight"] = 32] = "RotateRight";
+    EventType[EventType["Shoot"] = 64] = "Shoot";
+    EventType[EventType["Remove"] = 128] = "Remove";
+    EventType[EventType["Boost"] = 256] = "Boost";
+    EventType[EventType["Boom"] = 512] = "Boom";
+})(EventType || (EventType = {}));
+var Evt = /** @class */ (function () {
+    function Evt() {
+    }
+    return Evt;
+}());
+var EntityManager = /** @class */ (function () {
+    function EntityManager(tableManager, resourceManager) {
+        this.nextId = 0;
+    }
+    EntityManager.prototype.addEntity = function (entity) {
+    };
+    EntityManager.prototype.removeEntity = function (entity) {
+    };
+    EntityManager.prototype.sendEvent = function (eventType, source, target, data1, data2) {
+        if (data1 === void 0) { data1 = 0; }
+        if (data2 === void 0) { data2 = 0; }
+        return null;
+    };
+    EntityManager.prototype.update = function (stepSize) {
+    };
+    EntityManager.prototype.render = function (alpha, spriteBatch) {
+    };
+    EntityManager.prototype.getEntityById = function (id) {
+        return null;
+    };
+    EntityManager.prototype.getNextId = function () {
+        return this.nextId++;
+    };
+    EntityManager.prototype.destroyAllAsteroidsAt = function (position, radius, inflictor) {
+    };
+    EntityManager.prototype.clear = function () {
+    };
+    EntityManager.prototype.getNumberOfEntitiesOfType = function (type) {
+        return 0;
+    };
+    EntityManager.prototype.getClosestEntityOfType = function (position, type) {
+        return null;
+    };
+    return EntityManager;
+}());
+var gl = null;
+var TableManager = /** @class */ (function () {
+    function TableManager() {
+    }
+    return TableManager;
+}());
+var rse;
+(function (rse) {
+    var Renderer = /** @class */ (function () {
+        function Renderer(selector) {
+            var canvas = document.querySelector(selector);
+            gl = canvas.getContext("webgl2", {});
+            if (gl == null) {
+                alert("Unable to initialize WebGL context!");
+                return;
+            }
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+        return Renderer;
+    }());
+    rse.Renderer = Renderer;
+})(rse || (rse = {}));
+var rse;
+(function (rse) {
+    function compileShader(type, source, defines) {
+        var shader = gl.createShader(type);
+        var definesString = defines.map(function (s) { return '#define ' + s; }).join('\n');
+        source = definesString + '\n' + source;
+        source = "#version 300 es\n" + source;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
+            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+        }
+        return shader;
+    }
+    var Shader = /** @class */ (function () {
+        function Shader(vertexShaderSource, fragmentShaderSource, defines) {
+            var vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, defines);
+            var fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, defines);
+            this.handle = gl.createProgram();
+            gl.attachShader(this.handle, vertexShader);
+            gl.attachShader(this.handle, fragmentShader);
+            gl.linkProgram(this.handle);
+            gl.deleteShader(vertexShader);
+            gl.deleteShader(fragmentShader);
+            var success = gl.getProgramParameter(this.handle, gl.LINK_STATUS);
+            if (!success) {
+                throw "could not link shader " + gl.getProgramInfoLog(this.handle);
+            }
+        }
+        Shader.prototype.use = function () {
+            gl.useProgram(this.handle);
+        };
+        Shader.prototype.setUniformInt = function (index, value) {
+            gl.uniform1i(index, value);
+        };
+        Shader.prototype.setUniformFloat = function (index, value) {
+            gl.uniform1f(index, value);
+        };
+        Shader.prototype.setUniformVec4 = function (index, value) {
+            gl.uniform4f(index, value.x, value.y, value.z, value.w);
+        };
+        Shader.prototype.setUniformColor = function (index, value) {
+            gl.uniform4f(index, value.r / 255.0, value.g / 255.0, value.b / 255.0, value.a / 255.0);
+        };
+        Shader.prototype.getUniformLocation = function (name) {
+            return gl.getUniformLocation(this.handle, name);
+        };
+        Shader.fromScript = function (vertexShaderId, fragmentShaderId, defines) {
+            if (defines === void 0) { defines = []; }
+            var vertexShaderElement = document.getElementById(vertexShaderId);
+            var fragmentShaderElement = document.getElementById(fragmentShaderId);
+            var vertexShader = vertexShaderElement.text;
+            var fragmentShader = fragmentShaderElement.text;
+            return new Shader(vertexShader, fragmentShader, defines);
+        };
+        return Shader;
+    }());
+    rse.Shader = Shader;
+})(rse || (rse = {}));
+var rse;
+(function (rse) {
+    var Texture = /** @class */ (function () {
+        function Texture(width, height) {
+            this.width = width;
+            this.height = height;
+            // Create texture
+            this.handle = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+            // Setup texture paramters
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+        Texture.prototype.bind = function () {
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+        };
+        Texture.prototype.getWidth = function () {
+            return this.width;
+        };
+        Texture.prototype.getHeight = function () {
+            return this.height;
+        };
+        Texture.prototype.getHandle = function () {
+            return this.handle;
+        };
+        Texture.fromUrl = function (url, callback) {
+            var img = new Image();
+            img.onload = function () {
+                var texture = new Texture(img.width, img.height);
+                // Upload image data
+                texture.bind();
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+                callback(texture);
+            };
+            img.src = url;
+        };
+        return Texture;
+    }());
+    rse.Texture = Texture;
 })(rse || (rse = {}));
 /// <reference path="rse/Renderer.ts" />
 /// <reference path="rse/Shader.ts" />
