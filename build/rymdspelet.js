@@ -414,22 +414,83 @@ var Evt = /** @class */ (function () {
 var EntityManager = /** @class */ (function () {
     function EntityManager(tableManager, resourceManager) {
         this.nextId = 0;
+        this.entities = {};
+        this.entitiesToAdd = [];
+        this.entitiesToRemove = [];
+        this.eventQueue = [];
+        this.tableManager = tableManager;
+        this.resourceManager = resourceManager;
     }
     EntityManager.prototype.addEntity = function (entity) {
+        entity.init(this, this.resourceManager);
+        this.entitiesToAdd.push(entity);
     };
     EntityManager.prototype.removeEntity = function (entity) {
+        this.entitiesToRemove.push(entity);
     };
     EntityManager.prototype.sendEvent = function (eventType, source, target, data1, data2) {
         if (data1 === void 0) { data1 = 0; }
         if (data2 === void 0) { data2 = 0; }
-        return null;
+        var event = new Evt();
+        event.eventType = eventType;
+        event.source = source;
+        event.target = target;
+        event.data1 = data1;
+        event.data2 = data2;
+        this.eventQueue.push(event);
+        return event;
     };
     EntityManager.prototype.update = function (stepSize) {
+        // Remove pending entitites
+        for (var _i = 0, _a = this.entitiesToRemove; _i < _a.length; _i++) {
+            var entity = _a[_i];
+            delete this.entities[entity.getId()];
+        }
+        this.entitiesToRemove.length = 0;
+        // Add pending entities
+        for (var _b = 0, _c = this.entitiesToAdd; _b < _c.length; _b++) {
+            var entity = _c[_b];
+            this.entities[entity.getId()] = entity;
+        }
+        this.entitiesToAdd.length = 0;
+        // Check for collisions
+        for (var entityIdA in this.entities) {
+            var entityA = this.entities[entityIdA];
+            for (var entityIdB in this.entities) {
+                if (entityIdA == entityIdB)
+                    continue;
+                var entityB = this.entities[entityIdB];
+                if (entityA.intersects(entityB)) {
+                    this.sendEvent(EventType.Collision, entityA.getId(), entityB.getId());
+                }
+                // Abort if dead
+                if (!entityA.isAlive())
+                    break;
+            }
+        }
+        // Process events
+        for (var _d = 0, _e = this.eventQueue; _d < _e.length; _d++) {
+            var evt = _e[_d];
+            var entity = this.getEntityById(evt.target);
+            if (entity) {
+                entity.handleEvent(evt);
+            }
+        }
+        this.eventQueue.length = 0;
+        // Update
+        for (var entityId in this.entities) {
+            var entity = this.entities[entityId];
+            entity.update(stepSize);
+        }
     };
     EntityManager.prototype.render = function (alpha, spriteBatch) {
+        for (var entityId in this.entities) {
+            var entity = this.entities[entityId];
+            entity.render(alpha, spriteBatch);
+        }
     };
     EntityManager.prototype.getEntityById = function (id) {
-        return null;
+        return this.entities[id];
     };
     EntityManager.prototype.getNextId = function () {
         return this.nextId++;
@@ -437,6 +498,10 @@ var EntityManager = /** @class */ (function () {
     EntityManager.prototype.destroyAllAsteroidsAt = function (position, radius, inflictor) {
     };
     EntityManager.prototype.clear = function () {
+        this.entities = [];
+        this.entitiesToAdd.length = 0;
+        this.entitiesToRemove.length = 0;
+        this.eventQueue.length = 0;
     };
     EntityManager.prototype.getNumberOfEntitiesOfType = function (type) {
         return 0;
