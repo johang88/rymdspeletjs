@@ -1,15 +1,3 @@
-var EntityType;
-(function (EntityType) {
-    EntityType[EntityType["Ship"] = 0] = "Ship";
-    EntityType[EntityType["Asteroid"] = 1] = "Asteroid";
-    EntityType[EntityType["Bullet"] = 2] = "Bullet";
-    EntityType[EntityType["Explosion"] = 3] = "Explosion";
-})(EntityType || (EntityType = {}));
-var Entity = /** @class */ (function () {
-    function Entity() {
-    }
-    return Entity;
-}());
 var rse;
 (function (rse) {
     var ResourceManager = /** @class */ (function () {
@@ -327,6 +315,81 @@ var rse;
     }
     rse.circleIntersectCirlce = circleIntersectCirlce;
 })(rse || (rse = {}));
+/// <reference path="rse/ResourceManager.ts" />
+/// <reference path="rse/SpriteBatch.ts" />
+/// <reference path="rse/Math.ts" />
+var WIDTH = 1920;
+var HEIGHT = 1070;
+var EntityType;
+(function (EntityType) {
+    EntityType[EntityType["Ship"] = 0] = "Ship";
+    EntityType[EntityType["Asteroid"] = 1] = "Asteroid";
+    EntityType[EntityType["Bullet"] = 2] = "Bullet";
+    EntityType[EntityType["Explosion"] = 3] = "Explosion";
+})(EntityType || (EntityType = {}));
+var Entity = /** @class */ (function () {
+    function Entity(id, type) {
+        this.id = id;
+        this.type = type;
+        this.wrap = true;
+    }
+    Entity.prototype.init = function (entityManager, resourceManager) {
+        this.alive = true;
+        this.entityManager = entityManager;
+    };
+    Entity.prototype.update = function (stepSize) {
+        if (this.wrap) {
+            if (this.position.x < -this.size) {
+                this.position.x = WIDTH + this.size;
+            }
+            else if (this.position.x > WIDTH + this.size) {
+                this.position.x = -this.size;
+            }
+            if (this.position.y < -this.size) {
+                this.position.y = HEIGHT + this.size;
+            }
+            else if (this.position.y > HEIGHT + this.size) {
+                this.position.y = -this.size;
+            }
+        }
+        this.previousPosition = new rse.Vec2(this.position.x, this.position.y);
+        this.position.x += Math.sin(this.rotation) * this.velocity.x * stepSize;
+        this.position.y -= Math.cos(this.rotation) * this.velocity.y * stepSize;
+    };
+    Entity.prototype.render = function (alpha, spriteBatch) {
+    };
+    Entity.prototype.handleEvent = function (evt) {
+    };
+    Entity.prototype.setPosition = function (p) {
+    };
+    Entity.prototype.getId = function () {
+        return this.id;
+    };
+    Entity.prototype.getType = function () {
+        return this.type;
+    };
+    Entity.prototype.isAlive = function () {
+        return this.alive;
+    };
+    Entity.prototype.intersects = function (other) {
+        return rse.circleIntersectCirlce(this.position.x, this.position.y, this.size, other.position.x, other.position.y, other.size);
+    };
+    Entity.prototype.hurt = function (inflictor, damage) {
+    };
+    Entity.prototype.getSize = function () {
+        return this.size;
+    };
+    Entity.prototype.getPosition = function () {
+        return this.position;
+    };
+    Entity.prototype.getPreviousPosition = function () {
+        return this.position;
+    };
+    Entity.prototype.getRotation = function () {
+        return this.rotation;
+    };
+    return Entity;
+}());
 /// <reference path="rse/ResourceManager.ts" />
 /// <reference path="rse/SpriteBatch.ts" />
 /// <reference path="rse/Math.ts" />
