@@ -101,7 +101,7 @@ namespace rse {
 
             let tw = 1.0, th = 1.0;
             if (sprite.texture) {
-                th = sprite.texture.getWidth();
+                tw = sprite.texture.getWidth();
                 th = sprite.texture.getHeight();
             }
 
@@ -192,6 +192,8 @@ namespace rse {
             let vertices:Vertex[] = [];
             let drawCalls:DrawCall[] = [];
             let first = 0;
+
+            console.log(this.sprites);
 
             // Prepare vertex data and draw calls
             for (let i = 0; i < this.sprites.length; i++) {

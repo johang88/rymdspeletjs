@@ -29,6 +29,9 @@ class Entity {
         this.id = id;
         this.type = type;
         this.wrap = true;
+        this.position = new rse.Vec2();
+        this.previousPosition = new rse.Vec2();
+        this.rotation = 0;
     }
 
     init(entityManager:EntityManager, resourceManager:rse.ResourceManager) {
@@ -64,6 +67,8 @@ class Entity {
     }
 
     setPosition(p:rse.Vec2) {
+        this.position = new rse.Vec2(p.x, p.y);
+        this.previousPosition = new rse.Vec2(p.x, p.y);
     }
 
     getId():number {

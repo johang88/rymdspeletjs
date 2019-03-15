@@ -1,3 +1,16 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var rse;
 (function (rse) {
     var ResourceManager = /** @class */ (function () {
@@ -85,7 +98,7 @@ var rse;
             var scale = sprite.scale;
             var tw = 1.0, th = 1.0;
             if (sprite.texture) {
-                th = sprite.texture.getWidth();
+                tw = sprite.texture.getWidth();
                 th = sprite.texture.getHeight();
             }
             // Calculate uv coordinates
@@ -161,6 +174,7 @@ var rse;
             var vertices = [];
             var drawCalls = [];
             var first = 0;
+            console.log(this.sprites);
             // Prepare vertex data and draw calls
             for (var i = 0; i < this.sprites.length; i++) {
                 var points = this.sprites[i].points;
@@ -316,6 +330,65 @@ var rse;
     }
     rse.circleIntersectCirlce = circleIntersectCirlce;
 })(rse || (rse = {}));
+var rse;
+(function (rse) {
+    var Texture = /** @class */ (function () {
+        function Texture(width, height) {
+            this.width = width;
+            this.height = height;
+            // Create texture
+            this.handle = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+            // Setup texture paramters
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+        Texture.prototype.bind = function () {
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+        };
+        Texture.prototype.getWidth = function () {
+            return this.width;
+        };
+        Texture.prototype.getHeight = function () {
+            return this.height;
+        };
+        Texture.prototype.getHandle = function () {
+            return this.handle;
+        };
+        Texture.fromUrl = function (url, callback) {
+            var img = new Image();
+            img.onload = function () {
+                var texture = new Texture(img.width, img.height);
+                // Upload image data
+                texture.bind();
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+                callback(texture);
+            };
+            img.src = url;
+        };
+        return Texture;
+    }());
+    rse.Texture = Texture;
+})(rse || (rse = {}));
+var rse;
+(function (rse) {
+    var BlendMode;
+    (function (BlendMode) {
+        BlendMode[BlendMode["None"] = 0] = "None";
+        BlendMode[BlendMode["Add"] = 1] = "Add";
+        BlendMode[BlendMode["Alpha"] = 2] = "Alpha";
+    })(BlendMode = rse.BlendMode || (rse.BlendMode = {}));
+    var Sprite = /** @class */ (function () {
+        function Sprite() {
+        }
+        return Sprite;
+    }());
+    rse.Sprite = Sprite;
+})(rse || (rse = {}));
 /// <reference path="rse/ResourceManager.ts" />
 /// <reference path="rse/SpriteBatch.ts" />
 /// <reference path="rse/Math.ts" />
@@ -333,6 +406,9 @@ var Entity = /** @class */ (function () {
         this.id = id;
         this.type = type;
         this.wrap = true;
+        this.position = new rse.Vec2();
+        this.previousPosition = new rse.Vec2();
+        this.rotation = 0;
     }
     Entity.prototype.init = function (entityManager, resourceManager) {
         this.alive = true;
@@ -362,6 +438,8 @@ var Entity = /** @class */ (function () {
     Entity.prototype.handleEvent = function (evt) {
     };
     Entity.prototype.setPosition = function (p) {
+        this.position = new rse.Vec2(p.x, p.y);
+        this.previousPosition = new rse.Vec2(p.x, p.y);
     };
     Entity.prototype.getId = function () {
         return this.id;
@@ -391,6 +469,86 @@ var Entity = /** @class */ (function () {
     };
     return Entity;
 }());
+/// <reference path="rse/ResourceManager.ts" />
+/// <reference path="rse/SpriteBatch.ts" />
+/// <reference path="rse/Math.ts" />
+/// <reference path="rse/Texture.ts" />
+/// <reference path="rse/Sprite.ts" />
+/// <reference path="Entity.ts" />
+var AsteroidSize;
+(function (AsteroidSize) {
+    AsteroidSize[AsteroidSize["Small"] = 0] = "Small";
+    AsteroidSize[AsteroidSize["Medium"] = 1] = "Medium";
+    AsteroidSize[AsteroidSize["Large"] = 2] = "Large";
+    AsteroidSize[AsteroidSize["SmallGreen"] = 3] = "SmallGreen";
+    AsteroidSize[AsteroidSize["MediumGreen"] = 4] = "MediumGreen";
+    AsteroidSize[AsteroidSize["LargeGreen"] = 5] = "LargeGreen";
+    AsteroidSize[AsteroidSize["LargeManySmall"] = 6] = "LargeManySmall";
+})(AsteroidSize || (AsteroidSize = {}));
+var Asteroid = /** @class */ (function (_super) {
+    __extends(Asteroid, _super);
+    function Asteroid(texture) {
+        var _this = _super.call(this, 0, EntityType.Asteroid) || this;
+        _this.size = 32;
+        _this.texture = texture;
+        _this.sprite = new rse.Sprite();
+        _this.sprite.scale = new rse.Vec2(1, 1);
+        _this.sprite.color = rse.Color.White;
+        _this.sprite.rect = new rse.Rect(0, 0, 128, 128);
+        _this.sprite.texture = _this.texture;
+        _this.sprite.origin = new rse.Vec2(64, 64);
+        _this.sprite.blendMode = rse.BlendMode.Alpha;
+        return _this;
+    }
+    Asteroid.prototype.init = function (entityManager, resourceManager) {
+        this.id = entityManager.getNextId();
+        _super.prototype.init.call(this, entityManager, resourceManager);
+        // TODO: Load from table
+        this.damage = 70;
+        this.value = 540;
+        this.moneyValue = 450;
+        var minSpeed = 185;
+        var maxSpeed = 325;
+        var speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
+        this.velocity = new rse.Vec2(speed, speed);
+        this.health = this.maxHealth = 360;
+        this.size = 64;
+        this.rotation = Math.random() * Math.PI * 2.0;
+        this.rotationSpeed = Math.random() - 0.5;
+    };
+    Asteroid.prototype.update = function (stepSize) {
+        _super.prototype.update.call(this, stepSize);
+        this.rotation += this.rotationSpeed * stepSize;
+        if (this.spawnedByWarp > 0.0)
+            this.spawnedByWarp -= stepSize;
+    };
+    Asteroid.prototype.render = function (alpha, spriteBatch) {
+        _super.prototype.render.call(this, alpha, spriteBatch);
+        var pos = new rse.Vec2(rse.lerp(this.previousPosition.x, this.position.x, alpha), rse.lerp(this.previousPosition.y, this.position.y, alpha));
+        this.sprite.position = pos;
+        this.sprite.rotation = this.rotation;
+        spriteBatch.drawSprite(this.sprite);
+    };
+    Asteroid.prototype.handleEvent = function (evt) {
+        _super.prototype.handleEvent.call(this, evt);
+    };
+    Asteroid.prototype.construct = function (asteroidSize) {
+        this.asteroidSize = asteroidSize;
+        this.rotationSpeed = 0;
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
+        this.value = 0;
+        this.moneyValue = 0;
+        this.spawnedByWarp = 0;
+    };
+    Asteroid.prototype.getDamage = function () {
+        return this.damage;
+    };
+    Asteroid.prototype.hurt = function (inflictor, damage) {
+        _super.prototype.hurt.call(this, inflictor, damage);
+    };
+    return Asteroid;
+}(Entity));
 /// <reference path="rse/ResourceManager.ts" />
 /// <reference path="rse/SpriteBatch.ts" />
 /// <reference path="rse/Math.ts" />
@@ -513,6 +671,11 @@ var EntityManager = /** @class */ (function () {
     return EntityManager;
 }());
 var gl = null;
+var SpawnTable = /** @class */ (function () {
+    function SpawnTable() {
+    }
+    return SpawnTable;
+}());
 var TableManager = /** @class */ (function () {
     function TableManager() {
     }
@@ -595,61 +758,20 @@ var rse;
     }());
     rse.Shader = Shader;
 })(rse || (rse = {}));
-var rse;
-(function (rse) {
-    var Texture = /** @class */ (function () {
-        function Texture(width, height) {
-            this.width = width;
-            this.height = height;
-            // Create texture
-            this.handle = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
-            // Setup texture paramters
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.bindTexture(gl.TEXTURE_2D, null);
-        }
-        Texture.prototype.bind = function () {
-            gl.bindTexture(gl.TEXTURE_2D, this.handle);
-        };
-        Texture.prototype.getWidth = function () {
-            return this.width;
-        };
-        Texture.prototype.getHeight = function () {
-            return this.height;
-        };
-        Texture.prototype.getHandle = function () {
-            return this.handle;
-        };
-        Texture.fromUrl = function (url, callback) {
-            var img = new Image();
-            img.onload = function () {
-                var texture = new Texture(img.width, img.height);
-                // Upload image data
-                texture.bind();
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-                gl.bindTexture(gl.TEXTURE_2D, null);
-                callback(texture);
-            };
-            img.src = url;
-        };
-        return Texture;
-    }());
-    rse.Texture = Texture;
-})(rse || (rse = {}));
 /// <reference path="rse/Renderer.ts" />
 /// <reference path="rse/Shader.ts" />
 /// <reference path="rse/Texture.ts" />
 /// <reference path="rse/SpriteBatch.ts" />
 /// <reference path="rse/Math.ts" />
+/// <reference path="rse/ResourceManager.ts" />
 var renderer = new rse.Renderer("#glCanvas");
 var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shader", ["TEXTURED"]);
 var GameState = /** @class */ (function () {
     function GameState() {
         this.texture = null;
         this.ship = null;
+        this.asteroid = null;
+        this.init = true;
     }
     return GameState;
 }());
@@ -660,38 +782,35 @@ rse.Texture.fromUrl('data/textures/background1.png', function (texture) {
 rse.Texture.fromUrl('data/textures/ship.png', function (texture) {
     state.ship = texture;
 });
+rse.Texture.fromUrl('data/textures/medium_green_asteroid.png', function (texture) {
+    state.asteroid = texture;
+});
 var spriteBatch = new rse.SpriteBatch(shader);
+var resourceManager = new rse.ResourceManager();
+var entityManager = new EntityManager(new TableManager(), resourceManager);
 function tick() {
-    if (state.texture && state.ship) {
+    if (state.texture && state.ship && state.asteroid) {
+        if (state.init) {
+            state.init = false;
+            // Create asteroids
+            for (var i = 0; i < 10; i++) {
+                var position = new rse.Vec2(200 + i * 160, 200 + i * 140);
+                var asteroid = new Asteroid(state.asteroid);
+                asteroid.construct(AsteroidSize.MediumGreen);
+                asteroid.init(entityManager, resourceManager);
+                asteroid.setPosition(position);
+                entityManager.addEntity(asteroid);
+            }
+        }
         gl.viewport(0, 0, 1920, 1080);
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1080), new rse.Rect(0, 0, 1920 / 2048, 1080 / 2048), rse.Color.White, state.texture);
-        for (var y = 0; y < 1080 / 64; y++) {
-            for (var x = 0; x < 1920 / 64; x++) {
-                spriteBatch.drawTexture(new rse.Rect(x * 64, y * 64, 64, 64), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.ship);
-            }
-        }
+        entityManager.update(1.0 / 60.0);
+        entityManager.render(1.0, spriteBatch);
         spriteBatch.submit(1920, 1080, null);
     }
-    else {
-        window.requestAnimationFrame(tick);
-    }
+    window.requestAnimationFrame(tick);
 }
 window.requestAnimationFrame(tick);
-var rse;
-(function (rse) {
-    var BlendMode;
-    (function (BlendMode) {
-        BlendMode[BlendMode["None"] = 0] = "None";
-        BlendMode[BlendMode["Add"] = 1] = "Add";
-        BlendMode[BlendMode["Alpha"] = 2] = "Alpha";
-    })(BlendMode = rse.BlendMode || (rse.BlendMode = {}));
-    var Sprite = /** @class */ (function () {
-        function Sprite() {
-        }
-        return Sprite;
-    }());
-    rse.Sprite = Sprite;
-})(rse || (rse = {}));
 //# sourceMappingURL=rymdspelet.js.map
