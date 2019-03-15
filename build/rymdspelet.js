@@ -135,18 +135,19 @@ var rse;
             translatePoint(spriteInfo.points[5], sprite.position);
         };
         SpriteBatch.prototype.drawTexture = function (rect, uv, color, texture) {
+            var r = new rse.Rect(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
             var spriteInfo = new SpriteInfo();
             this.sprites.push(spriteInfo);
             spriteInfo.color = color;
             spriteInfo.texture = texture.getHandle();
             spriteInfo.blendMode = rse.BlendMode.Alpha;
             spriteInfo.flags = 0;
-            spriteInfo.points[0] = { x: rect.x, y: rect.y, u: uv.x, v: uv.y };
-            spriteInfo.points[1] = { x: rect.x, y: rect.h, u: uv.x, v: uv.h };
-            spriteInfo.points[2] = { x: rect.w, y: rect.h, u: uv.w, v: uv.h };
-            spriteInfo.points[3] = { x: rect.x, y: rect.y, u: uv.x, v: uv.y };
-            spriteInfo.points[4] = { x: rect.w, y: rect.h, u: uv.w, v: uv.h };
-            spriteInfo.points[5] = { x: rect.w, y: rect.y, u: uv.w, v: uv.y };
+            spriteInfo.points[0] = { x: r.x, y: r.y, u: uv.x, v: uv.y };
+            spriteInfo.points[1] = { x: r.x, y: r.h, u: uv.x, v: uv.h };
+            spriteInfo.points[2] = { x: r.w, y: r.h, u: uv.w, v: uv.h };
+            spriteInfo.points[3] = { x: r.x, y: r.y, u: uv.x, v: uv.y };
+            spriteInfo.points[4] = { x: r.w, y: r.h, u: uv.w, v: uv.h };
+            spriteInfo.points[5] = { x: r.w, y: r.y, u: uv.w, v: uv.y };
         };
         // todo: print methods here ...
         // Submit pending draw calls
@@ -648,6 +649,7 @@ var shader = rse.Shader.fromScript("sprite_vertex_shader", "sprite_fragment_shad
 var GameState = /** @class */ (function () {
     function GameState() {
         this.texture = null;
+        this.ship = null;
     }
     return GameState;
 }());
@@ -655,13 +657,21 @@ var state = new GameState();
 rse.Texture.fromUrl('data/textures/background1.png', function (texture) {
     state.texture = texture;
 });
+rse.Texture.fromUrl('data/textures/ship.png', function (texture) {
+    state.ship = texture;
+});
 var spriteBatch = new rse.SpriteBatch(shader);
 function tick() {
-    if (state.texture != null) {
+    if (state.texture && state.ship) {
         gl.viewport(0, 0, 1920, 1080);
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         spriteBatch.drawTexture(new rse.Rect(0, 0, 1920, 1080), new rse.Rect(0, 0, 1920 / 2048, 1080 / 2048), rse.Color.White, state.texture);
+        for (var y = 0; y < 1080 / 64; y++) {
+            for (var x = 0; x < 1920 / 64; x++) {
+                spriteBatch.drawTexture(new rse.Rect(x * 64, y * 64, 64, 64), new rse.Rect(0, 0, 1, 1), rse.Color.White, state.ship);
+            }
+        }
         spriteBatch.submit(1920, 1080, null);
     }
     else {

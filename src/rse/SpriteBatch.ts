@@ -160,6 +160,8 @@ namespace rse {
         }
 
         drawTexture(rect:Rect, uv:Rect, color:Color, texture:Texture) {
+            let r = new Rect(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
+
             let spriteInfo = new SpriteInfo();
             this.sprites.push(spriteInfo);
 
@@ -168,12 +170,12 @@ namespace rse {
             spriteInfo.blendMode = BlendMode.Alpha;
             spriteInfo.flags = 0;
 
-            spriteInfo.points[0] = { x: rect.x, y: rect.y, u: uv.x, v: uv.y };
-            spriteInfo.points[1] = { x: rect.x, y: rect.h, u: uv.x, v: uv.h };
-            spriteInfo.points[2] = { x: rect.w, y: rect.h, u: uv.w, v: uv.h };
-            spriteInfo.points[3] = { x: rect.x, y: rect.y, u: uv.x, v: uv.y };
-            spriteInfo.points[4] = { x: rect.w, y: rect.h, u: uv.w, v: uv.h };
-            spriteInfo.points[5] = { x: rect.w, y: rect.y, u: uv.w, v: uv.y };
+            spriteInfo.points[0] = { x: r.x, y: r.y, u: uv.x, v: uv.y };
+            spriteInfo.points[1] = { x: r.x, y: r.h, u: uv.x, v: uv.h };
+            spriteInfo.points[2] = { x: r.w, y: r.h, u: uv.w, v: uv.h };
+            spriteInfo.points[3] = { x: r.x, y: r.y, u: uv.x, v: uv.y };
+            spriteInfo.points[4] = { x: r.w, y: r.h, u: uv.w, v: uv.h };
+            spriteInfo.points[5] = { x: r.w, y: r.y, u: uv.w, v: uv.y };
         }
 
         // todo: print methods here ...
